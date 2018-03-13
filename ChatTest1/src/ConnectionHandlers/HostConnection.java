@@ -17,7 +17,6 @@ import Messages.Message;
 import Messages.MessageInputStream;
 import Messages.MessageOutputStream;
 import Messages.MotherOfAllMessages;
-import Messages.MyNameIsMessage;
 import Messages.UpdateMessage;
 import Messages.UsersOnline;
 
@@ -57,31 +56,16 @@ public class HostConnection implements Runnable{
 	
 	@Override
 	public void run() {
-		
 		try {
-			
-			
-			while(sock.isConnected()) {
-				
+			while(sock.isConnected()) {	
 				//announce that this threads client is online (has to wait until it has the username)
 				if(username != null) {
 					if(!announced) {
 						announced = true;
-						synchronized(otherConnectionsObject) {
-							for(HostConnection r : otherConnectionsObject) {
-								if(r == null) {
-									otherConnectionsObject.remove(r);
-								}else if(r.getSock() != null){
-									if(r.getSock().isConnected()) {
-										new MessageOutputStream(r.getSock().getOutputStream()
-												).writeMessage(new Message(username+" has logged on",
-														"ALL","Server"));		
-									}
-								}
-							}
-						}
+						sendToAll(new Message(username+" has logged on","ALL","Server"));
 					}
 				}
+				
 				//Reads from the socket
 				mom = mis.readMessage();
 				
@@ -90,112 +74,115 @@ public class HostConnection implements Runnable{
 					System.out.println(sock.getInetAddress() + ":" + sock.getPort() + " has ended the connection.");
 					return;
 				}
-				//Check what type of message was received
-				//in order to process it correctly
 				
-				if(mom.getType() == 0) {
+				//Check what type of message was received
+				if(mom.getType() == MotherOfAllMessages.MESSAGE) {
 					Message msg = (Message)mom;
 					if(msg.getTo().equals("ALL")) {
-						//Send to all
-						//Gets all the other host connections and sends the message
-						synchronized(otherConnectionsObject) {
-							for(HostConnection r : otherConnectionsObject) {
-								if(r == null) {
-									otherConnectionsObject.remove(r);
-								}else if(r.getSock() != null){
-									if(r.getSock().isConnected() && r.username != this.username) {
-										new MessageOutputStream(r.getSock().getOutputStream()
-												).writeMessage(msg);		
-									}
-								}
-							}
-						}
+						//Send the message 
+						sendToAll(msg);
 					}else {
 						//Send to someone specific
-						//Find receiver by username from list of other hostconnections
-						synchronized(otherConnectionsObject) {
-							for(HostConnection r : otherConnectionsObject) {
-								if(r == null) {
-									otherConnectionsObject.remove(r);									
-								}else if(r.getUsername().equals(msg.getTo())) {
-									new MessageOutputStream(r.getSock().getOutputStream()).writeMessage(msg);		
-								}
-							}						
-						}
+						sendTo(msg);
 					}
 				}
-				//This message is ment to update that the user is active
-				//ToDo: make a keep-alive message flow
-				else if(mom.getType() == 1){
-						UpdateMessage umsg = (UpdateMessage)mom;
+				//This message contains commands from the client to the server
+				else if(mom.getType() == MotherOfAllMessages.UPDATE_MESSAGE){
+					UpdateMessage umsg = (UpdateMessage)mom;			
+					if(umsg.getStatus() == UpdateMessage.EXIT) {
+						//if status is -1 client has told us that it is disconnecting
+						System.out.println("Ending connection to " + sock.getInetAddress() + ":" + sock.getPort());
+						return;
+					}
+					if(umsg.getStatus() == UpdateMessage.MY_NAME_IS) {
 						username = umsg.getUsername();	
-						if(umsg.getStatus() == -1) {
-							//if status is -1 client has told us that it is disconnecting
-							System.out.println("Ending connection to " + sock.getInetAddress() + ":" + sock.getPort());
-							return;
-						}
-				}
-				//if client requests useres online: send list of usernames
-				else if(mom.getType() == 3) {
-					//RequestUseresOnlineMessage
-					synchronized(otherConnectionsObject) {
-						UsersOnline uo = new UsersOnline(otherConnectionsObject);
-						
-						new MessageOutputStream(sock.getOutputStream()).writeMessage(uo);		
+					}
+					if(umsg.getStatus() == UpdateMessage.REQUEST_USERS_ONLINE) {
+						informClientOfUsersOnline();
 					}
 				}
-				//client sends his name
-				else if(mom.getType() == 4) {
-					MyNameIsMessage mnim = (MyNameIsMessage)mom;
-					username = mnim.getUsername();
-				}
-				if(sock == null)
-					return;
 			}
 		}catch(SocketException ex) {
 			System.out.println("Lost Connection to " + ((sock == null) ? "host" :
 				sock.getInetAddress().toString()) + ":" + sock.getPort());
-			//System.out.println("Thread: " + Thread.currentThread().getName());
-			//ex.printStackTrace();
 		}catch(Exception ex) {
 			ex.printStackTrace();
 		}finally {
-			
 			//announce that this threads client has left
-			synchronized(otherConnectionsObject) {
-				for(HostConnection r : otherConnectionsObject) {
-					if(r == null) {
-						otherConnectionsObject.remove(r);
-					}else if(r.getSock() != null){
-						if(r.getSock().isConnected()) {
-							try {
-								new MessageOutputStream(r.getSock().getOutputStream()
-										).writeMessage(new Message(username+" has left","ALL","Server"));										
-							}catch(SocketException ex) {
-								
-							} catch (IOException e) {
-								e.printStackTrace();
-							}
-						}
-					}
-				}
-			}
+			announceClientLeft();
 			
+			//close the socket and remove this connection from the list of online connections
 			try {
+				synchronized(otherConnectionsObject) {
+					otherConnectionsObject.remove(this);				
+				}
 				if(out != null)
 					out.close();
 				if(in != null)
 					in.close();
 				if(sock != null)
 					sock.close();
-				synchronized(otherConnectionsObject) {
-					otherConnectionsObject.remove(this);				
-				}
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
 		}
-			
+	}
+	
+	
+	private void informClientOfUsersOnline() throws SocketException, IOException {
+		synchronized(otherConnectionsObject) {
+			UsersOnline uo = new UsersOnline(otherConnectionsObject);
+			new MessageOutputStream(sock.getOutputStream()).writeMessage(uo);		
+		}
+	}
+	private void sendTo(Message msg) throws SocketException, IOException {
+		//Find receiver by username from list of other hostconnections
+		synchronized(otherConnectionsObject) {
+			for(HostConnection r : otherConnectionsObject) {
+				if(r == null) {
+					otherConnectionsObject.remove(r);									
+				}else if(r.getUsername().equals(msg.getTo())) {
+					new MessageOutputStream(r.getSock().getOutputStream()).writeMessage(msg);		
+				}
+			}						
+		}
+	}
+	private void sendToAll(MotherOfAllMessages msg) throws SocketException, IOException {
+		//For each host if it is null remove it, otherwise make a message outputStream
+		//from the sockets its socket outputstream and send the message
+		synchronized(otherConnectionsObject) {
+			for(HostConnection r : otherConnectionsObject) {
+				if(r == null) {
+					otherConnectionsObject.remove(r);
+				}else if(r.getSock() != null){
+					if(r.getSock().isConnected()) {
+						if(r.username != this.username) {
+							new MessageOutputStream(r.getSock().getOutputStream()
+									).writeMessage(msg);									
+						}
+					}
+				}
+			}
+		}
+	}
+	private void announceClientLeft() {
+		synchronized(otherConnectionsObject) {
+			for(HostConnection r : otherConnectionsObject) {
+				if(r == null) {
+					otherConnectionsObject.remove(r);
+				}else if(r.getSock() != null){
+					if(r.getSock().isConnected() && r.username != this.username) {
+						try {
+							new MessageOutputStream(r.getSock().getOutputStream()
+									).writeMessage(new Message(username+" has left","ALL","Server"));										
+						}catch(SocketException ex) {
+						} catch (IOException e) {
+							e.printStackTrace();
+						}
+					}
+				}
+			}
+		}
 	}
 	public String toString() {
 		String s = "Connected to ";
@@ -203,5 +190,4 @@ public class HostConnection implements Runnable{
 			s+= sock.getInetAddress().toString() + ":" + sock.getPort();
 		return s;
 	}
-
 }

@@ -67,18 +67,13 @@ public class MessageInputStream {
 			totalBytesReceived += bytesReceived;
 		}
 		
-		if (type == 0) {
+		if (type == MotherOfAllMessages.MESSAGE) {
 			msg = new Message(buffer);			
-		} else if(type == 1) {
+		} else if(type == MotherOfAllMessages.UPDATE_MESSAGE) {
 			msg = new UpdateMessage(buffer);
-		} else if(type == 2) {
+		} else if(type == MotherOfAllMessages.USERS_ONLINE_MESSAGE) {
 			msg = new UsersOnline(buffer);
-		} else if(type == 3) {
-			msg = new RequestUsersOnline(buffer);
-		} else if(type == 4) {
-			msg = new MyNameIsMessage(buffer);
 		}
-		
 		
 		return msg;
 		

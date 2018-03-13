@@ -7,8 +7,6 @@ import java.net.*;
 
 import Messages.Message;
 import Messages.MessageOutputStream;
-import Messages.MyNameIsMessage;
-import Messages.RequestUsersOnline;
 import Messages.UpdateMessage;
 
 /*
@@ -61,8 +59,8 @@ public class Client {
 			
 			
 			//Send my name to the server followed by a request to see who else is online
-			mos.writeMessage(new MyNameIsMessage(sendFrom));
-			mos.writeMessage(new RequestUsersOnline());
+			mos.writeMessage(new UpdateMessage(sendFrom, UpdateMessage.MY_NAME_IS));
+			mos.writeMessage(new UpdateMessage(sendFrom, UpdateMessage.REQUEST_USERS_ONLINE));
 			
 			
 			
@@ -75,7 +73,7 @@ public class Client {
 				return;
 			}
 			//Send a status update to inform that you are online
-			UpdateMessage umsg = new UpdateMessage(sendFrom);
+			UpdateMessage umsg = new UpdateMessage(sendFrom, UpdateMessage.MY_NAME_IS);
 			mos.writeMessage(umsg);
 			
 			//send messages
@@ -85,7 +83,7 @@ public class Client {
 				//determine if it is a command or a message
 				if(!theMessage.equals(EXIT) && !theMessage.equals(END)) {
 					if(theMessage.equals(WHO)){
-						mos.writeMessage(new RequestUsersOnline());
+						mos.writeMessage(new UpdateMessage(sendFrom, UpdateMessage.REQUEST_USERS_ONLINE));
 					}else if(theMessage.equals(HELP)){
 						System.out.println(HELPMESSAGE);
 					}

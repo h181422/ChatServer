@@ -39,11 +39,11 @@ public class Receive implements Runnable{
 				}
 				
 				//Determine what type of message you received, to properly print it
-				if(mom.getType() == 0) {
+				if(mom.getType() == MotherOfAllMessages.MESSAGE) {
 					Message msg = (Message)mom;
 					System.out.println(msg);
 				}
-				if(mom.getType()==2) {
+				if(mom.getType()==MotherOfAllMessages.USERS_ONLINE_MESSAGE) {
 					UsersOnline uo = (UsersOnline)mom;
 					System.out.print("Online: ");
 					System.out.println(uo.toString());

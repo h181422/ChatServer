@@ -7,6 +7,10 @@ import java.util.Arrays;
 
 public class UpdateMessage extends MotherOfAllMessages{
 
+	public static final byte EXIT = -1;
+	public static final byte MY_NAME_IS = 0;
+	public static final byte REQUEST_USERS_ONLINE = 1;
+	
 	String username;
 	byte status;
 	

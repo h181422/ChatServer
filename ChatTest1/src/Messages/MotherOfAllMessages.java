@@ -7,6 +7,10 @@ import java.nio.ByteOrder;
 
 public abstract class MotherOfAllMessages implements ISendable{
 
+	public static final int MESSAGE = 0;
+	public static final int UPDATE_MESSAGE = 1;
+	public static final int USERS_ONLINE_MESSAGE = 2;
+	
 	protected short type;
 	protected short length;
 	

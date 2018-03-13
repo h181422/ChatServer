@@ -50,7 +50,6 @@ public class UsersOnline extends MotherOfAllMessages{
 		byte[] bamount;
 		synchronized(hostConnectionList) {
 			for(HostConnection hc : hostConnectionList) {
-				//System.out.println(hc);
 				if (hc == null)
 					hostConnectionList.remove(hc);
 				else if(hc.getUsername() != null)
