@@ -90,7 +90,6 @@ public class HostConnection implements Runnable{
 				else if(mom.getType() == MotherOfAllMessages.UPDATE_MESSAGE){
 					UpdateMessage umsg = (UpdateMessage)mom;			
 					if(umsg.getStatus() == UpdateMessage.EXIT) {
-						//if status is -1 client has told us that it is disconnecting
 						System.out.println("Ending connection to " + sock.getInetAddress() + ":" + sock.getPort());
 						return;
 					}
@@ -99,6 +98,13 @@ public class HostConnection implements Runnable{
 					}
 					if(umsg.getStatus() == UpdateMessage.REQUEST_USERS_ONLINE) {
 						informClientOfUsersOnline();
+					}
+					if(umsg.getStatus() == UpdateMessage.ASK_IF_ONLINE) {
+						if(isOnline(umsg.getUsername())) {
+							mos.writeMessage(new UpdateMessage("Server", UpdateMessage.IS_ONLINE));
+						}else {
+							mos.writeMessage(new UpdateMessage("Server", UpdateMessage.NOT_ONLINE));
+						}
 					}
 				}
 			}
@@ -128,15 +134,17 @@ public class HostConnection implements Runnable{
 		}
 	}
 	
-	
+	//Sends a message containing all online users to the client
 	private void informClientOfUsersOnline() throws SocketException, IOException {
 		synchronized(otherConnectionsObject) {
 			UsersOnline uo = new UsersOnline(otherConnectionsObject);
 			new MessageOutputStream(sock.getOutputStream()).writeMessage(uo);		
 		}
 	}
+	
+	//Sends the mesage to someone specific
 	private void sendTo(Message msg) throws SocketException, IOException {
-		//Find receiver by username from list of other hostconnections
+		//Find receiver by username from list of other hostConnections
 		synchronized(otherConnectionsObject) {
 			for(HostConnection r : otherConnectionsObject) {
 				if(r == null) {
@@ -147,6 +155,8 @@ public class HostConnection implements Runnable{
 			}						
 		}
 	}
+	
+	//Sends a message to everyone
 	private void sendToAll(MotherOfAllMessages msg) throws SocketException, IOException {
 		//For each host if it is null remove it, otherwise make a message outputStream
 		//from the sockets its socket outputstream and send the message
@@ -165,6 +175,8 @@ public class HostConnection implements Runnable{
 			}
 		}
 	}
+	
+	//Send a message to all online clients that this client has left
 	private void announceClientLeft() {
 		synchronized(otherConnectionsObject) {
 			for(HostConnection r : otherConnectionsObject) {
@@ -184,6 +196,25 @@ public class HostConnection implements Runnable{
 			}
 		}
 	}
+	
+	//Checks if someone with the given username is in the list of connections
+	private boolean isOnline(String username) {
+		synchronized(otherConnectionsObject) {
+			for(HostConnection r : otherConnectionsObject) {
+				if(r == null) {
+					otherConnectionsObject.remove(r);
+				}else if(r.getSock() != null){
+					if(r.getSock().isConnected()) {
+						if(username.equals(r.getUsername())) {
+							return true;
+						}
+					}
+				}
+			}
+		}
+		return false;
+	}
+	
 	public String toString() {
 		String s = "Connected to ";
 		if(sock != null)

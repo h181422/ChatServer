@@ -22,13 +22,10 @@ public abstract class MotherOfAllMessages implements ISendable{
 		return type;
 	}
 	
-	protected enum msgType{ //Not really using this atm.
-		string, update, UsersOnline, RequestUsersOnline, myNameIs;
-	}
 	protected abstract void setType();
 	
+	//Header is serialized equally for all messages
 	protected byte[] serializeHeader() {
-		
 		ByteBuffer bb = ByteBuffer.allocate(2);
 		bb.putShort(type);
 		byte[] ar1 = bb.array();

@@ -19,7 +19,7 @@ public class Message extends MotherOfAllMessages{
 	byte toSize;
 
 	public Message(String message, String receiver, String me) {
-		type = (short)msgType.string.ordinal();
+		type = MotherOfAllMessages.MESSAGE;
 		setTo(receiver);
 		setFrom(me);
 		setContent(message);
@@ -47,10 +47,6 @@ public class Message extends MotherOfAllMessages{
 	
 	public short getType() {
 		return type;
-	}
-
-	protected void setType(msgType mt) {
-		this.type =(short)mt.ordinal();
 	}
 
 	public String getFrom() {
@@ -120,7 +116,7 @@ public class Message extends MotherOfAllMessages{
 	}
 	@Override
 	protected void setType() {
-		type = 0;
+		type = MotherOfAllMessages.MESSAGE;
 	}
 	
 }

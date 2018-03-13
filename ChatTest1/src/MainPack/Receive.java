@@ -9,6 +9,7 @@ package MainPack;
 import Messages.Message;
 import Messages.MessageInputStream;
 import Messages.MotherOfAllMessages;
+import Messages.UpdateMessage;
 import Messages.UsersOnline;
 
 import java.io.*;
@@ -20,6 +21,7 @@ public class Receive implements Runnable{
 	Message msg;
 	MotherOfAllMessages mom;
 	MessageInputStream mis;
+	Client c;
 	
 	public Receive(InputStream in) {
 		this.in = in;
@@ -43,15 +45,24 @@ public class Receive implements Runnable{
 					Message msg = (Message)mom;
 					System.out.println(msg);
 				}
-				if(mom.getType()==MotherOfAllMessages.USERS_ONLINE_MESSAGE) {
+				else if(mom.getType()==MotherOfAllMessages.USERS_ONLINE_MESSAGE) {
 					UsersOnline uo = (UsersOnline)mom;
 					System.out.print("Online: ");
 					System.out.println(uo.toString());
 				}
+				else if(mom.getType() == MotherOfAllMessages.UPDATE_MESSAGE) {
+					UpdateMessage umsg = (UpdateMessage)mom;
+					if(umsg.getStatus() == UpdateMessage.NOT_ONLINE) {
+						Client.targetOnline(false);
+					}
+					if(umsg.getStatus() == UpdateMessage.IS_ONLINE) {
+						Client.targetOnline(true);
+					}
+				}
 				
 			}
 		}catch(SocketException ex) {
-			System.out.println("exiting");
+			System.out.println("Closing receiver");
 		}
 		catch (Exception e) {
 			e.printStackTrace();
