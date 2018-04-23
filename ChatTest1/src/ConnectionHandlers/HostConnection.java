@@ -13,6 +13,8 @@ import java.net.Socket;
 import java.net.SocketException;
 import java.util.List;
 
+import MainPack.DatabaseStuff;
+import Messages.LoginMessage;
 import Messages.Message;
 import Messages.MessageInputStream;
 import Messages.MessageOutputStream;
@@ -58,21 +60,47 @@ public class HostConnection implements Runnable{
 	public void run() {
 		try {
 			while(sock.isConnected()) {	
+				
+				//Reads from the socket
+				mom = mis.readMessage();
+				
+				//null indicates that the host has ended the connection
+				//also terminates connection if the client attempts to send
+				//an unsupported message format
+				if(mom == null) {
+					System.out.println(sock.getInetAddress() + ":" + sock.getPort()
+					+ " has ended the connection.");
+					return;
+				}
+
+				//Login
+				if(username == null) {
+					if(mom.getType() == MotherOfAllMessages.LOGIN_MESSAGE) {
+						LoginMessage lm = (LoginMessage)mom;
+						if(lm.getTypeL() == LoginMessage.LOGIN) {
+							if(DatabaseStuff.authenticate(lm.getUsername(), lm.getPassword())) {
+								mos.writeMessage(new UpdateMessage("Success", UpdateMessage.LOGIN_OK));
+								username = lm.getUsername();
+							}else {
+								mos.writeMessage(new UpdateMessage("Invalid username or password", UpdateMessage.LOGIN_FAILED));
+							}
+						}
+						else if(lm.getTypeL() == LoginMessage.CREATE_ACCOUNT) {
+							if(DatabaseStuff.makeAccount(lm.getUsername(), lm.getPassword())) {
+								mos.writeMessage(new UpdateMessage("Success", UpdateMessage.CREATE_ACCOUNT_OK));
+							}else {
+								mos.writeMessage(new UpdateMessage("Already in use", UpdateMessage.CREATE_ACCOUNT_FAILED));
+							}
+						}
+					}					
+				}
+				
 				//announce that this threads client is online (has to wait until it has the username)
 				if(username != null) {
 					if(!announced) {
 						announced = true;
 						sendToAll(new Message(username+" has logged on","ALL","Server"));
 					}
-				}
-				
-				//Reads from the socket
-				mom = mis.readMessage();
-				
-				//null indicates that the host has ended the connection
-				if(mom == null) {
-					System.out.println(sock.getInetAddress() + ":" + sock.getPort() + " has ended the connection.");
-					return;
 				}
 				
 				//Check what type of message was received
@@ -93,8 +121,9 @@ public class HostConnection implements Runnable{
 						System.out.println("Ending connection to " + sock.getInetAddress() + ":" + sock.getPort());
 						return;
 					}
+					//replaced with authentication
 					if(umsg.getStatus() == UpdateMessage.MY_NAME_IS) {
-						username = umsg.getUsername();	
+						//username = umsg.getUsername();	
 					}
 					if(umsg.getStatus() == UpdateMessage.REQUEST_USERS_ONLINE) {
 						informClientOfUsersOnline();
@@ -107,6 +136,7 @@ public class HostConnection implements Runnable{
 						}
 					}
 				}
+
 			}
 		}catch(SocketException ex) {
 			System.out.println("Lost Connection to " + ((sock == null) ? "host" :

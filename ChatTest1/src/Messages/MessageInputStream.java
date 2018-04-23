@@ -14,6 +14,8 @@ import java.nio.ByteOrder;
 
 public class MessageInputStream {
 
+	
+	
 	InputStream in;
 	MotherOfAllMessages msg;
 	
@@ -30,12 +32,12 @@ public class MessageInputStream {
 		try {
 		//Read the 4 first bytes of the incoming message
 		//to determine the length of the whole message.
-		int totalBytesReceived = 4;
+		int totalBytesReceived = MotherOfAllMessages.HEADER_SIZE;
 		int bytesReceived;
 		short length;
 		short type;
-		byte[] typeHolder = new byte[2];
-		byte[] lengthHolder = new byte[2];
+		byte[] typeHolder = new byte[MotherOfAllMessages.TYPE_SIZE];
+		byte[] lengthHolder = new byte[MotherOfAllMessages.LENGTH_SIZE];
 		
 		typeHolder[0] = (byte)in.read();
 		typeHolder[1] = (byte)in.read();
@@ -73,6 +75,8 @@ public class MessageInputStream {
 			msg = new UpdateMessage(buffer);
 		} else if(type == MotherOfAllMessages.USERS_ONLINE_MESSAGE) {
 			msg = new UsersOnline(buffer);
+		} else if(type == MotherOfAllMessages.LOGIN_MESSAGE) {
+			msg = new LoginMessage(buffer);
 		}
 		
 		return msg;

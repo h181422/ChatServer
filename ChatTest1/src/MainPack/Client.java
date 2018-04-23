@@ -5,6 +5,7 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.*;
 
+import Messages.LoginMessage;
 import Messages.Message;
 import Messages.MessageOutputStream;
 import Messages.UpdateMessage;
@@ -21,7 +22,7 @@ public class Client {
 	final static String WHO = "?who?";
 	final static String ALL = "ALL";
 	final static String HELP = "HELP";
-	final static String[] COMMANDS = {EXIT, END, WHO, ALL, HELP};
+	final static String[] COMMANDS = {EXIT, END, WHO, HELP};
 	final static String HELPMESSAGE = "Exit: " +EXIT+", End: "+END+", Who is online: "+WHO+", Send to all: "+ALL+", this message: "+HELP;
 	
 	static BufferedReader br;
@@ -42,7 +43,7 @@ public class Client {
 	public static void main(String[] args) {	
 		try {
 			//Ask user for information
-			System.out.println("Choose a username");
+			System.out.println("Choose a username (Per)");
 			br = new BufferedReader(new InputStreamReader(System.in));
 			do {
 				sendFrom = br.readLine();
@@ -61,7 +62,7 @@ public class Client {
 			
 			
 			//Send my name to the server followed by a request to see who else is online
-			mos.writeMessage(new UpdateMessage(sendFrom, UpdateMessage.MY_NAME_IS));
+			mos.writeMessage(new LoginMessage(sendFrom, "pass", LoginMessage.LOGIN));
 			mos.writeMessage(new UpdateMessage(sendFrom, UpdateMessage.REQUEST_USERS_ONLINE));
 			
 			//Choose who you would like to send messages to

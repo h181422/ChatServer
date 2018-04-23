@@ -14,6 +14,7 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
 import ConnectionHandlers.HostConnection;
+import Messages.LoginMessage;
 
 public class Server {
 	
@@ -26,9 +27,12 @@ public class Server {
 		try {
 			
 			int port = 1234;
-			servSocket = new ServerSocket(port);
+			servSocket = new ServerSocket(port);				
 			
-
+			//setting up database:
+			DatabaseStuff.createNewDatabase("authentication.db");
+			DatabaseStuff.createNewTable("people");
+			
 			System.out.println("Server has started. Waiting for clients..");
 			while(true) {
 				//wait for a new connection

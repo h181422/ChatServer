@@ -5,12 +5,14 @@ package Messages;
  */
 
 import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 import java.util.Arrays;
 
 public class Message extends MotherOfAllMessages{
 
 	final int MAXNAMELENGTH = Byte.MAX_VALUE;
+	final static int MAX_CONTENT_LENGTH = 65000; 
+	final static int CONTENT_SIZE = 2;
+	final static int FROM_TO_SIZE = 2;
 	
 	String from;
 	String to;
@@ -23,26 +25,22 @@ public class Message extends MotherOfAllMessages{
 		setTo(receiver);
 		setFrom(me);
 		setContent(message);
-		length = (short)(2+2+2+to.length()+from.length()+content.length());
+		length = (short)(TYPE_SIZE+LENGTH_SIZE+CONTENT_SIZE+to.getBytes().length+from.getBytes()
+		.length+content.getBytes().length);
 		toSize = (byte)to.length();
 		fromSize = (byte)from.length();
 	}
 	public Message(byte[] fromBytes) {
-		byte[] bType = new byte[2];
-		bType[0] = fromBytes[0];
-		bType[1] = fromBytes[1];
-		ByteBuffer bb = ByteBuffer.wrap(bType).order(ByteOrder.BIG_ENDIAN);
-		type = bb.getShort();
-		byte[] bSize = new byte[2];
-		bSize[0] = fromBytes[2];
-		bSize[1] = fromBytes[3];
-		ByteBuffer bb2 = ByteBuffer.wrap(bSize).order(ByteOrder.BIG_ENDIAN);
-		length = bb2.getShort();
+		extractHeader(fromBytes);
 		toSize = fromBytes[4];
-		to = new String(Arrays.copyOfRange(fromBytes, 5, 5+toSize));
-		fromSize = fromBytes[5+toSize];
-		from = new String(Arrays.copyOfRange(fromBytes, 5+toSize+1, 5+toSize+1+fromSize));
-		content = new String(Arrays.copyOfRange(fromBytes, 5+toSize+1+fromSize, length));
+		to = new String(Arrays.copyOfRange(fromBytes, 
+				HEADER_SIZE+1, HEADER_SIZE+1+toSize));
+		fromSize = fromBytes[HEADER_SIZE+1+toSize];
+		from = new String(Arrays.copyOfRange(fromBytes, 
+				HEADER_SIZE+1+toSize+1, HEADER_SIZE
+								+1+toSize+1+fromSize));
+		content = new String(Arrays.copyOfRange(fromBytes, 
+				HEADER_SIZE+1+toSize+1+fromSize, length));
 	}
 	
 	public short getType() {
@@ -76,7 +74,7 @@ public class Message extends MotherOfAllMessages{
 	}
 
 	public void setContent(String content) {
-		if(content.length() > 65000)
+		if(content.length() > MAX_CONTENT_LENGTH)
 			throw new IllegalArgumentException("Too long message."+
 				"Split up the message or use a different message type");
 		this.content = content;
@@ -86,7 +84,8 @@ public class Message extends MotherOfAllMessages{
 	
 	@Override
 	public byte[] serialize() {
-		length = (short)(2+2+2+to.length()+from.length()+content.length());
+		length = (short)(FROM_TO_SIZE+FROM_TO_SIZE+CONTENT_SIZE+
+				to.getBytes().length+from.getBytes().length+content.getBytes().length);
 		
 		ByteBuffer serialized = ByteBuffer.allocate(length);
 		

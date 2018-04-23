@@ -5,7 +5,6 @@ package MainPack;
  * received messages to the console for the client
  */
 
-
 import Messages.Message;
 import Messages.MessageInputStream;
 import Messages.MotherOfAllMessages;

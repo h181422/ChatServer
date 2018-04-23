@@ -13,6 +13,10 @@ public class UpdateMessage extends MotherOfAllMessages{
 	public static final byte NOT_ONLINE = 2;
 	public static final byte IS_ONLINE = 3;
 	public static final byte ASK_IF_ONLINE = 4;
+	public static final byte LOGIN_OK = 5;
+	public static final byte LOGIN_FAILED = 6;
+	public static final byte CREATE_ACCOUNT_OK = 7;
+	public static final byte CREATE_ACCOUNT_FAILED = 8;
 	
 	String username;
 	byte status;
@@ -65,4 +69,5 @@ public class UpdateMessage extends MotherOfAllMessages{
 	protected void setType() {
 		type = MotherOfAllMessages.UPDATE_MESSAGE;
 	}
+
 }
