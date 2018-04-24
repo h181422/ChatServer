@@ -10,6 +10,7 @@ import java.net.Socket;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
@@ -23,6 +24,7 @@ public class Server {
 		Socket sock;
 		ServerSocket servSocket = null;
 		List<HostConnection> activeConnectionsObject = Collections.synchronizedList(new ArrayList<HostConnection>());
+		//As i do networking in synchronized wrappers, this list would have been better off as a CopyOnWriteArrayList
 		Executor executor= Executors.newCachedThreadPool();
 		try {
 			
